@@ -1,9 +1,9 @@
 import {Text, View} from 'react-native';
-import './global.css';
+import '../global.css';
 
 export default function Index() {
   return (
-    <View className="flex-1 justify-center items-center">
+    <View className="flex-1 justify-center items-center bg-primary">
       <Text className="text-primary">
         Edit app/index.tsx to edit this screen.
       </Text>
