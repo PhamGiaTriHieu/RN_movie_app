@@ -16,18 +16,11 @@ const _Layout = () => {
       tabBar={(props) => {
         return <TabBarBottom {...props} />;
       }}
+      screenOptions={{
+        headerShown: false,
+      }}
     >
-      <Tab.Screen
-        name="Home"
-        component={Index}
-        // options={{
-        //   tabBarIcon: ({focused}) => {
-        //     return <Icon name="home" size={24} />;
-        //   },
-        //   title: 'Home',
-        //   tabBarLabelStyle: {fontSize: 20, color: 'red'},
-        // }}
-      />
+      <Tab.Screen name="Home" component={Index} />
       <Tab.Screen name="Explore" component={Explore} />
       <Tab.Screen name="Saved" component={Saved} />
       <Tab.Screen name="Profile" component={Profile} />

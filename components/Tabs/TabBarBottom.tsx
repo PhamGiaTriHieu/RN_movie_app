@@ -9,7 +9,7 @@ import Icon from '@expo/vector-icons/Ionicons';
 const TabBarBottom = ({state, descriptors, navigation}: BottomTabBarProps) => {
   const {buildHref} = useLinkBuilder();
   return (
-    <View className="flex flex-row justify-center items-center  w-full bg-black h-[90px]">
+    <View className="flex flex-row  justify-center items-center bg-black h-[90px]">
       {state.routes.map((route, index) => {
         const {options} = descriptors[route.key];
         const label = (
@@ -52,7 +52,7 @@ const TabBarBottom = ({state, descriptors, navigation}: BottomTabBarProps) => {
 
         return (
           <PlatformPressable
-            className="flex justify-center items-center pb-6 pl-4 pr-4"
+            className="flex justify-center items-center pb-6 px-4"
             href={buildHref(route.name, route.params)}
             accessibilityState={isFocused ? {selected: true} : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
