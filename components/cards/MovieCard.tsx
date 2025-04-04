@@ -1,12 +1,13 @@
 import {TMoviesData} from '@/libs/interfaces/search-movies.interface';
-import {Link} from 'expo-router';
+import useSearchModalStore from '@/libs/stores/uesSearchModalStore';
+import {useRouter} from 'expo-router';
 import {useState} from 'react';
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -16,12 +17,33 @@ const MovieCard = ({
   poster_url,
   episode_current,
   year,
+  slug,
 }: TMoviesData) => {
   const [loading, setLoading] = useState(true);
+  const [isPressed, setIsPressed] = useState(false);
+
+  const router = useRouter();
+  const {closeModal} = useSearchModalStore();
+
+  const handlePress = () => {
+    setTimeout(() => {
+      router.push(`/movies/${slug}`);
+      closeModal();
+    }, 300);
+    // console.log('Navigating to:', `/movies/${slug}`);
+    // router.push(`/movies/${slug}`);
+    // closeModal();
+  };
 
   return (
-    <Link href={`/movies/${_id}`} className="pb-4">
-      <TouchableOpacity className="flex flex-row gap-6">
+    <Pressable
+      className={`${isPressed ? 'pressed' : ''} pb-4 flex`}
+      onPress={handlePress}
+      android_ripple={{color: 'rgba(255,255,255,0.2)', borderless: false}}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+    >
+      <View className="flex flex-row gap-6">
         <View className="relative h-44 rounded-lg">
           {loading && (
             <View className="absolute inset-0 flex items-center justify-center bg-gray-900">
@@ -40,13 +62,13 @@ const MovieCard = ({
             onError={() => setLoading(false)}
           />
         </View>
-        <View className="max-w-[200px] flex flex-col gap-2 h-full justify-center">
+        <View className="max-w-[200px] flex flex-col gap-2 justify-center">
           <Text className="text-white font-bold">{name}</Text>
           <Text className="text-secondary font-bold">{episode_current}</Text>
           <Text className="text-secondary font-bold">{year}</Text>
         </View>
-      </TouchableOpacity>
-    </Link>
+      </View>
+    </Pressable>
   );
 };
 

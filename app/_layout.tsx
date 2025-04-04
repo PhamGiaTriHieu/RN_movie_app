@@ -1,6 +1,7 @@
 import {Stack} from 'expo-router';
-
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {StatusBar} from 'react-native';
 import './global.css';
 
 const queryClient = new QueryClient({
@@ -18,12 +19,16 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{headerShown: false}} />
-        {/* <Stack.Screen name="search" options={{headerShown: false}} /> */}
-        <Stack.Screen name="movies/[id]" options={{headerShown: false}} />
-      </Stack>
-    </QueryClientProvider>
+    <>
+      <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
+        <StatusBar />
+        <QueryClientProvider client={queryClient}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+            <Stack.Screen name="movies/[id]" options={{headerShown: false}} />
+          </Stack>
+        </QueryClientProvider>
+      </SafeAreaView>
+    </>
   );
 }
