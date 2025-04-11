@@ -91,19 +91,3 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
-
-// Tạo các custom hooks để sử dụng với Axios
-export const apiClient = {
-  get: async (url: string, params = {}) => {
-    return axiosInstance.get(url, {params});
-  },
-  post: async (url: string, data = {}) => {
-    return axiosInstance.post(url, data);
-  },
-  put: async (url: string, data = {}) => {
-    return axiosInstance.put(url, data);
-  },
-  delete: async (url: string) => {
-    return axiosInstance.delete(url);
-  },
-};

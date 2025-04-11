@@ -30,9 +30,6 @@ const MovieCard = ({
       router.push(`/movies/${slug}`);
       closeModal();
     }, 300);
-    // console.log('Navigating to:', `/movies/${slug}`);
-    // router.push(`/movies/${slug}`);
-    // closeModal();
   };
 
   return (
