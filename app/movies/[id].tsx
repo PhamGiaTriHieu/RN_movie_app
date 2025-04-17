@@ -17,15 +17,24 @@ import {useVideoPlayer, VideoSource, VideoView} from 'expo-video';
 import {Colors} from '@/libs/constants/colors';
 import IconAntDesign from '@expo/vector-icons/AntDesign';
 import IconFontAwesome from '@expo/vector-icons/FontAwesome';
+import IconMaterialIcons from '@expo/vector-icons/MaterialIcons';
+import TextDetail from '@/components/TextDetail/TextDetail';
+import TextDetailKeyName from '@/components/TextDetail/TextDetailKeyName';
+import EpisodeList from '@/components/episodes/EpisodeList';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 
 const MovieDetails = () => {
   const {id: slug} = useLocalSearchParams();
   const [movieDetails, setMovieDetails] = useState<IMovieDetail | undefined>();
+  const [episodeTotal, setEpisodeTotal] = useState<number | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  console.log('🚀 ~ MovieDetails ~ movieDetails:', movieDetails);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const [showMoreButton, setShowMoreButton] = useState(true);
+  const [showEpisodeModal, setShowEpisodeModal] = useState(false);
+
   const [textShown, setTextShown] = useState(false);
   const toggleNumberOfLines = () => {
     setTextShown(!textShown);
@@ -57,6 +66,7 @@ const MovieDetails = () => {
       const {episode_total} = movieData.movie;
       const {link_m3u8} = movieData?.episodes[0].server_data[0];
       setVideoUrl(link_m3u8);
+      setEpisodeTotal(episode_total as unknown as number);
     }
   }, [data]);
 
@@ -65,11 +75,16 @@ const MovieDetails = () => {
     player.play();
   });
 
-  console.log('🚀 ~ MovieDetails ~ movieDetails:', movieDetails);
+  const handleSelectEpisode = (episode: string) => {
+    setVideoUrl(episode);
+    player.play();
+  };
+
+  // console.log('movieDetails episode: ', movieDetails?.episodes);
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center bg-primary">
+      <View className="items-center justify-center flex-1 bg-primary">
         <ActivityIndicator color={Colors.accent} size="large" />
         <Text className="mt-2 text-base color-white">
           Đang tải thông tin phim...
@@ -79,109 +94,82 @@ const MovieDetails = () => {
   }
 
   return (
-    <View className="bg-primary flex-1">
-      <ScrollView contentContainerStyle={{paddingBottom: 80, flexGrow: 1}}>
-        <View className="flex w-full mt-0 pt-0 bg-black">
-          <VideoView
-            player={player}
-            allowsFullscreen={true}
-            allowsPictureInPicture={true}
-            nativeControls={true}
-            contentFit="contain"
-            style={styles.video}
-          />
-        </View>
+    <View className="flex-1 bg-primary">
+      <View className="flex w-full pt-0 mt-0 bg-black">
+        <VideoView
+          player={player}
+          allowsFullscreen={true}
+          allowsPictureInPicture={true}
+          nativeControls={true}
+          contentFit="contain"
+          style={styles.video}
+        />
+      </View>
+      <ScrollView
+        contentContainerStyle={{paddingBottom: 80, flexGrow: 1}}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={false}
+      >
         {/* Title */}
-        <View className="flex-col items-start justify-center mt-3 px-5">
-          <Text className="text-white font-bold text-lg">
+        <View className="flex-col items-start justify-center px-5 mt-3">
+          <Text className="text-lg font-bold text-white">
             {movieDetails?.movie.name} - {movieDetails?.movie.origin_name}{' '}
             {`(${movieDetails?.movie.year})`}
           </Text>
         </View>
         {/* Time */}
-        <View className="flex items-start justify-center mt-1 px-5">
-          <Text className="text-secondary text-sm">
+        <View className="flex items-start justify-center px-5 mt-1">
+          <Text className="text-sm text-secondary">
             {`${movieDetails?.movie?.time} | ${movieDetails?.movie?.quality} | ${movieDetails?.movie?.lang}`}
           </Text>
         </View>
 
         {/* content */}
-        <View className="flex-col items-start justify-center mt-1 px-5">
+        <View className="flex-col items-start justify-center px-5 mt-1">
           <Text
-            className="text-secondary text-sm"
+            className="text-sm text-secondary"
             numberOfLines={textShown ? undefined : 2}
             ellipsizeMode="tail"
           >
             {movieDetails?.movie?.content}
           </Text>
-          {showMoreButton ? (
-            <Text
-              className="text-white font-semibold"
-              onPress={toggleNumberOfLines}
-            >
-              {textShown ? 'Read Less' : 'Read More'}
-            </Text>
-          ) : null}
+
+          <Text
+            className="font-semibold text-white"
+            onPress={toggleNumberOfLines}
+          >
+            {textShown ? 'Read Less' : 'Read More'}
+          </Text>
         </View>
         {/* Actor */}
-        <View className="flex-row items-start justify-start gap-1 mt-2 px-5">
-          <View className="w-[20%]">
-            <Text className="text-secondary text-sm">Diễn viên: </Text>
-          </View>
-          <View className="w-[80%]">
-            <Text className="text-secondary text-sm">
-              {movieDetails?.movie?.actor &&
-                movieDetails?.movie?.actor.slice(0, 4).join(', ')}
-            </Text>
-          </View>
+        <View>
+          <TextDetail title="Diễn viên" data={movieDetails?.movie?.actor} />
         </View>
+
         {/* Director */}
-        <View className="flex-row items-start justify-start gap-1 mt-2 px-5">
-          <View className="w-[20%]">
-            <Text className="text-secondary text-sm">Đạo diễn: </Text>
-          </View>
-          <View className="w-[80%]">
-            <Text className="text-secondary text-sm">
-              {movieDetails?.movie?.director &&
-                movieDetails?.movie?.director.slice(0, 4).join(', ')}
-            </Text>
-          </View>
+        <View>
+          <TextDetail title="Đạo diễn" data={movieDetails?.movie?.director} />
         </View>
+
         {/* Country */}
-        <View className="flex-row items-start justify-start gap-1 mt-2 px-5">
-          <View className="w-[20%]">
-            <Text className="text-secondary text-sm">Quốc gia: </Text>
-          </View>
-          <View className="w-[80%]">
-            <Text className="text-secondary text-sm">
-              {movieDetails?.movie?.country.length &&
-                movieDetails?.movie?.country
-                  .slice(0, 4)
-                  .map((item) => item.name)
-                  .join(', ')}
-            </Text>
-          </View>
+        <View>
+          <TextDetailKeyName
+            title="Quốc gia"
+            data={movieDetails?.movie?.country}
+          />
         </View>
         {/* Category */}
-        <View className="flex-row items-start justify-start gap-1 mt-2 px-5">
-          <View className="w-[20%]">
-            <Text className="text-secondary text-sm">Thể loại: </Text>
-          </View>
-          <View className="w-[80%]">
-            <Text className="text-secondary text-sm">
-              {movieDetails?.movie?.category.length &&
-                movieDetails?.movie?.category
-                  .slice(0, 4)
-                  .map((item) => item.name)
-                  .join(', ')}
-            </Text>
-          </View>
+        <View>
+          <TextDetailKeyName
+            title="Thể loại"
+            data={movieDetails?.movie?.category}
+          />
         </View>
 
         {/* Liked and Saved action */}
-        <View className="flex-row items-center justify-center gap-16 mt-5 px-5">
+        <View className="flex-row items-center justify-center gap-16 px-5 mt-5">
           <View
-            className="flex-col justify-center items-center gap-2"
+            className="flex-col items-center justify-center gap-2"
             onTouchStart={() => setIsLiked(!isLiked)}
           >
             <IconAntDesign
@@ -198,7 +186,7 @@ const MovieDetails = () => {
             </Text>
           </View>
           <View
-            className="flex-col justify-center items-center gap-2"
+            className="flex-col items-center justify-center gap-2"
             onTouchStart={() => setIsSaved(!isSaved)}
           >
             <IconFontAwesome
@@ -217,9 +205,30 @@ const MovieDetails = () => {
         </View>
 
         {/* Episodes */}
-        <View className="flex-col items-start justify-center mt-3 px-5">
-          <Text className="text-white font-bold text-xl">Tập phim</Text>
-        </View>
+        {episodeTotal && episodeTotal > 1 && (
+          <View className="flex-col items-start justify-center px-5 mt-3">
+            <View className="flex-row items-center justify-between w-full">
+              <Text className="text-white font-bold text-xl  border-b-2 border-b-red-400 h-[38px]">
+                Tập phim
+              </Text>
+
+              <IconMaterialIcons
+                name="arrow-forward-ios"
+                size={20}
+                color={Colors.white}
+                onPress={() => {
+                  console.log('Chọn tập phim Click arrow forward');
+                  setShowEpisodeModal(!showEpisodeModal);
+                }}
+              />
+            </View>
+            <EpisodeList
+              episodes={movieDetails?.episodes}
+              onSelectEpisode={handleSelectEpisode}
+              episodePlaying={videoUrl}
+            />
+          </View>
+        )}
       </ScrollView>
     </View>
   );

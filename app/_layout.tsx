@@ -2,6 +2,7 @@ import {Stack} from 'expo-router';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {StatusBar} from 'react-native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import './global.css';
 
 const queryClient = new QueryClient({
@@ -19,7 +20,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   return (
-    <>
+    <GestureHandlerRootView>
       <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
         <StatusBar />
         <QueryClientProvider client={queryClient}>
@@ -29,6 +30,6 @@ export default function RootLayout() {
           </Stack>
         </QueryClientProvider>
       </SafeAreaView>
-    </>
+    </GestureHandlerRootView>
   );
 }
