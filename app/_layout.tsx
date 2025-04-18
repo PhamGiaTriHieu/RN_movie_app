@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
         <StatusBar />
         <QueryClientProvider client={queryClient}>

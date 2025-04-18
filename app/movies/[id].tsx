@@ -1,11 +1,12 @@
 import {
   ActivityIndicator,
+  Button,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocalSearchParams} from 'expo-router';
 import {useQuery} from '@tanstack/react-query';
 import {apiClient} from '@/services/api';
@@ -21,19 +22,36 @@ import IconMaterialIcons from '@expo/vector-icons/MaterialIcons';
 import TextDetail from '@/components/TextDetail/TextDetail';
 import TextDetailKeyName from '@/components/TextDetail/TextDetailKeyName';
 import EpisodeList from '@/components/episodes/EpisodeList';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import BottomSheet, {
+  BottomSheetModalProvider,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
+import {FlatList} from 'react-native-gesture-handler';
+import EpisodeListGrid from '@/components/episodes/EpisodeListGrid';
 
 const MovieDetails = () => {
   const {id: slug} = useLocalSearchParams();
   const [movieDetails, setMovieDetails] = useState<IMovieDetail | undefined>();
   const [episodeTotal, setEpisodeTotal] = useState<number | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  console.log('🚀 ~ MovieDetails ~ movieDetails:', movieDetails);
+  // console.log('🚀 ~ MovieDetails ~ movieDetails:', movieDetails);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const [showEpisodeModal, setShowEpisodeModal] = useState(false);
+  const [indexShowModal, setIndexShowModal] = useState(-1);
+
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  const handleSheetChanges = useCallback((index: number) => {
+    console.log('handleSheetChanges', index);
+    setIndexShowModal(index);
+  }, []);
+
+  const handleClosePress = () => {
+    if (bottomSheetRef.current) {
+      bottomSheetRef.current.close();
+    }
+  };
 
   const [textShown, setTextShown] = useState(false);
   const toggleNumberOfLines = () => {
@@ -218,7 +236,7 @@ const MovieDetails = () => {
                 color={Colors.white}
                 onPress={() => {
                   console.log('Chọn tập phim Click arrow forward');
-                  setShowEpisodeModal(!showEpisodeModal);
+                  handleSheetChanges(1);
                 }}
               />
             </View>
@@ -229,6 +247,30 @@ const MovieDetails = () => {
             />
           </View>
         )}
+
+        {/* Bottom sheet modal */}
+        <BottomSheetModalProvider>
+          <BottomSheet
+            ref={bottomSheetRef}
+            onChange={handleSheetChanges}
+            snapPoints={['98%']}
+            enablePanDownToClose={true}
+            index={indexShowModal}
+          >
+            <BottomSheetView style={styles.contentContainer}>
+              <Button title="Close Sheet" onPress={handleClosePress} />
+              <Text>Awesome 🎉</Text>
+
+              {episodeTotal && episodeTotal > 1 && (
+                <EpisodeListGrid
+                  episodes={movieDetails?.episodes}
+                  onSelectEpisode={handleSelectEpisode}
+                  episodePlaying={videoUrl}
+                />
+              )}
+            </BottomSheetView>
+          </BottomSheet>
+        </BottomSheetModalProvider>
       </ScrollView>
     </View>
   );
@@ -241,5 +283,12 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingTop: 0,
     aspectRatio: 16 / 9,
+  },
+  contentContainer: {
+    // flex: 1,
+    // padding: 36,
+    // alignItems: 'center',
+    paddingHorizontal: 5,
+    height: '100%',
   },
 });
