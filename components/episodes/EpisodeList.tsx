@@ -6,9 +6,8 @@ import {
   IServerDetail,
 } from '@/libs/interfaces/movie-detail.interface';
 
-import {Dimensions} from 'react-native';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
+// import {Dimensions} from 'react-native';
+// const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_WIDTH = 70;
 const ITEM_SPACING = 8;
 const TOTAL_WIDTH = ITEM_WIDTH + ITEM_SPACING;
@@ -31,6 +30,7 @@ const EpisodeList = ({
 
   const [isActive, setIsActive] = useState(episodePlaying);
   const [isPressedIndex, setIsPressedIndex] = useState<number | null>(null);
+  const [indexScrollTo, setIndexScrollTo] = useState<number>(0);
 
   const [shouldCenter, setShouldCenter] = useState(false);
 
@@ -45,22 +45,23 @@ const EpisodeList = ({
     if (findItem) {
       setIsActive(findItem.link_m3u8);
     }
+  }, [episodePlaying]);
+
+  useEffect(() => {
     const findIndex = episodes[0].server_data.findIndex(
       (episode) => episode.link_m3u8 === episodePlaying
     );
 
-    if (findIndex === -1 || !flatListRef.current) return;
+    setIndexScrollTo(findIndex);
 
-    // set scroll active episode
-    const isFirstFew = findIndex <= 2;
-
-    setShouldCenter(!isFirstFew);
-    flatListRef.current.scrollToIndex({
+    flatListRef?.current?.scrollToIndex({
       index: findIndex,
+      // viewOffset: ITEM_SPACING,
+      viewOffset: 0,
       animated: true,
       viewPosition: 0,
     });
-  }, [episodePlaying]);
+  }, [episodePlaying, indexScrollTo]);
 
   const renderEpisode = (episodes: IServerDetail, index: number) => {
     return (
@@ -69,7 +70,6 @@ const EpisodeList = ({
         style={{
           padding: 10,
           marginRight: ITEM_SPACING,
-          // marginLeft: index === 0 ? 0 : 5,
           borderWidth: 1,
           borderColor: isActive === episodes.link_m3u8 ? Colors.accent : '#ccc',
           borderRadius: 8,
@@ -82,8 +82,6 @@ const EpisodeList = ({
           if (onSelectEpisode) {
             onSelectEpisode(episodes.link_m3u8);
           }
-
-          // xử lý load video tại đây
         }}
         onPressIn={() => setIsPressedIndex(index)}
         onPressOut={() => setIsPressedIndex(null)}
@@ -105,6 +103,7 @@ const EpisodeList = ({
     <View className="h-[80px] mt-4">
       <FlatList
         ref={flatListRef}
+        initialScrollIndex={0}
         data={episodes[0].server_data}
         showsHorizontalScrollIndicator={false}
         horizontal
@@ -123,12 +122,9 @@ const EpisodeList = ({
             });
           }, 500);
         }}
-        contentContainerStyle={{
-          // padding: 10,
-          // paddingLeft: 0,
-          // paddingHorizontal: (SCREEN_WIDTH - ITEM_WIDTH) / 2,
-          paddingHorizontal: shouldCenter ? (SCREEN_WIDTH - ITEM_WIDTH) / 2 : 0,
-        }}
+        // contentContainerStyle={{
+        //   paddingLeft: ITEM_SPACING,
+        // }}
       />
     </View>
   );

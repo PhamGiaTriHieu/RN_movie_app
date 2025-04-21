@@ -1,12 +1,11 @@
 import {
   ActivityIndicator,
-  Button,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useLocalSearchParams} from 'expo-router';
 import {useQuery} from '@tanstack/react-query';
 import {apiClient} from '@/services/api';
@@ -26,7 +25,6 @@ import BottomSheet, {
   BottomSheetModalProvider,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import {FlatList} from 'react-native-gesture-handler';
 import EpisodeListGrid from '@/components/episodes/EpisodeListGrid';
 
 const MovieDetails = () => {
@@ -97,8 +95,6 @@ const MovieDetails = () => {
     setVideoUrl(episode);
     player.play();
   };
-
-  // console.log('movieDetails episode: ', movieDetails?.episodes);
 
   if (isLoading) {
     return (
@@ -254,18 +250,31 @@ const MovieDetails = () => {
             ref={bottomSheetRef}
             onChange={handleSheetChanges}
             snapPoints={['98%']}
-            enablePanDownToClose={true}
+            handleIndicatorStyle={{backgroundColor: Colors.accent}}
+            handleStyle={{backgroundColor: Colors.primary}}
             index={indexShowModal}
+            style={{backgroundColor: Colors.primary}}
+            handleComponent={() => (
+              <View className="flex items-center justify-center">
+                <IconMaterialIcons
+                  name="keyboard-arrow-down"
+                  size={26}
+                  color={Colors.accent}
+                  onPress={handleClosePress}
+                />
+              </View>
+            )}
           >
-            <BottomSheetView style={styles.contentContainer}>
-              <Button title="Close Sheet" onPress={handleClosePress} />
-              <Text>Awesome 🎉</Text>
-
+            <BottomSheetView
+              style={styles.contentContainer}
+              className="bg-primary"
+            >
               {episodeTotal && episodeTotal > 1 && (
                 <EpisodeListGrid
                   episodes={movieDetails?.episodes}
                   onSelectEpisode={handleSelectEpisode}
                   episodePlaying={videoUrl}
+                  onClose={handleClosePress}
                 />
               )}
             </BottomSheetView>
@@ -285,9 +294,6 @@ const styles = StyleSheet.create({
     aspectRatio: 16 / 9,
   },
   contentContainer: {
-    // flex: 1,
-    // padding: 36,
-    // alignItems: 'center',
     paddingHorizontal: 5,
     height: '100%',
   },

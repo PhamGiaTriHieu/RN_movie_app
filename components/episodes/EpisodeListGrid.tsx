@@ -19,19 +19,19 @@ interface IEpisodeListProps {
   episodes: IEpisode[] | undefined;
   onSelectEpisode?: (episode: string) => void;
   episodePlaying: string | null;
+  onClose: () => void;
 }
 
 const EpisodeListGrid = ({
   episodes,
   onSelectEpisode,
   episodePlaying,
+  onClose,
 }: IEpisodeListProps) => {
   if (!episodes) {
     return null;
   }
   const insets = useSafeAreaInsets();
-  console.log('🚀 ~ EpisodeList ~ episodes:', episodes);
-
   const [isActive, setIsActive] = useState(episodePlaying);
 
   const ITEMS_PER_PAGE = 50;
@@ -75,16 +75,15 @@ const EpisodeListGrid = ({
           if (onSelectEpisode) {
             onSelectEpisode(episodes.link_m3u8);
           }
-
-          // xử lý load video tại đây
+          if (onClose) {
+            onClose();
+          }
         }}
       >
         <View className={`flex items-center justify-center`}>
           <Text
-            className={`${
-              isActive === episodes.link_m3u8
-                ? 'text-accent'
-                : 'text-white text-center text-[12px]'
+            className={`text-center text-[12px] ${
+              isActive === episodes.link_m3u8 ? 'text-accent' : 'text-white'
             }`}
           >
             {episodes?.name}
@@ -97,38 +96,45 @@ const EpisodeListGrid = ({
   return (
     <View className={`h-auto`}>
       {/* Node Pagination */}
-      <FlatList
-        data={Array.from({length: totalPages}, (_, i) => i + 1)}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        nestedScrollEnabled
-        keyExtractor={(item, index) => `${item.toString()}-${index}`}
-        renderItem={({item}) => {
-          const start = (item - 1) * ITEMS_PER_PAGE + 1;
-          const end = Math.min(
-            item * ITEMS_PER_PAGE,
-            episodes[0].server_data.length
-          );
-          const label = `${start}-${end}`;
-          return (
-            <TouchableOpacity
-              onPress={() => setCurrentPage(item)}
-              style={{
-                margin: ITEM_MARGIN / 2,
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: 6,
-                backgroundColor: currentPage === item ? '#333' : '#ccc',
-                height: 30,
-              }}
-            >
-              <Text style={{color: currentPage === item ? '#fff' : '#000'}}>
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
+      <View className="my-2">
+        <FlatList
+          data={Array.from({length: totalPages}, (_, i) => i + 1)}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          nestedScrollEnabled
+          keyExtractor={(item, index) => `${item.toString()}-${index}`}
+          renderItem={({item}) => {
+            const start = (item - 1) * ITEMS_PER_PAGE + 1;
+            const end = Math.min(
+              item * ITEMS_PER_PAGE,
+              episodes[0].server_data.length
+            );
+            const label = `${start}-${end}`;
+            return (
+              <TouchableOpacity
+                onPress={() => setCurrentPage(item)}
+                style={{
+                  margin: ITEM_MARGIN / 2,
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: currentPage === item ? Colors.accent : '#ccc',
+                  height: 30,
+                }}
+              >
+                <Text
+                  className={`text-center text-[12px] ${
+                    currentPage === item ? 'text-accent' : 'text-white'
+                  }`}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
 
       {/* Render episode List  */}
       <FlatList
@@ -138,7 +144,7 @@ const EpisodeListGrid = ({
         keyExtractor={(item, index) => `${item.name}-${index}`}
         renderItem={({item, index}) => renderEpisode(item, index)}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 40,
+          paddingBottom: insets.bottom + 80,
           paddingTop: 12,
         }}
         nestedScrollEnabled
