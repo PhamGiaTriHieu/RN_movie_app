@@ -1,34 +1,9 @@
 export type TResponseSearchData = {
-  seoOnPage: {
-    og_type: string;
-    titleHead: string;
-    descriptionHead: string;
-    og_image: Array<string>;
-    og_url: string;
-  };
-  breadCrumb: Array<{
-    name: string;
-    isCurrent: boolean;
-    position: number;
-  }>;
+  seoOnPage: SeoOnPage;
+  breadCrumb: IBreadCrumb[];
   titlePage: string;
   items: TMoviesData[];
-  params: {
-    type_slug: string;
-    keyword: string;
-    filterCategory: Array<any>;
-    filterCountry: Array<any>;
-    filterYear: number;
-    filterType: any;
-    sortField: string;
-    sortType: string;
-    pagination: {
-      totalItems: number;
-      totalItemsPerPage: number;
-      currentPage: number;
-      totalPages: number;
-    };
-  };
+  params: IParams;
   type_list: string;
   APP_DOMAIN_FRONTEND: string;
   APP_DOMAIN_CDN_IMAGE: string;
@@ -67,4 +42,36 @@ export interface ICountry {
   id: string;
   name: string;
   slug: string;
+}
+
+export interface IBreadCrumb {
+  name: string;
+  slug?: string;
+  isCurrent: boolean;
+  position: number;
+}
+
+export interface SeoOnPage {
+  og_type: string;
+  titleHead: string;
+  descriptionHead: string;
+  og_image: string[];
+  og_url: string;
+}
+
+export interface IParams {
+  type_slug: string;
+  filterCategory: string[];
+  filterCountry: string[];
+  filterYear: string[];
+  filterType: string[];
+  sortField: string;
+  sortType: string;
+  pagination: IPagination;
+}
+export interface IPagination {
+  totalItems: number;
+  totalItemsPerPage: number;
+  currentPage: number;
+  totalPages: number;
 }

@@ -31,6 +31,7 @@ const EpisodeListGrid = ({
   if (!episodes) {
     return null;
   }
+
   const insets = useSafeAreaInsets();
   const [isActive, setIsActive] = useState(episodePlaying);
 
@@ -71,7 +72,6 @@ const EpisodeListGrid = ({
           backgroundColor: Colors.primary,
         }}
         onPress={() => {
-          console.log(episodes.link_m3u8);
           if (onSelectEpisode) {
             onSelectEpisode(episodes.link_m3u8);
           }

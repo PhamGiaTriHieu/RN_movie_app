@@ -1,15 +1,17 @@
 import {
   ActivityIndicator,
-  ScrollView,
+  FlatList,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useLocalSearchParams} from 'expo-router';
 import {useQuery} from '@tanstack/react-query';
-import {apiClient} from '@/services/api';
+import {apiClient, apiClientWithVersion} from '@/services/api';
 import {
+  IEpisode,
   IMovieDetail,
   IMovieDetailResponse,
 } from '@/libs/interfaces/movie-detail.interface';
@@ -26,13 +28,27 @@ import BottomSheet, {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import EpisodeListGrid from '@/components/episodes/EpisodeListGrid';
+import {
+  TMoviesData,
+  TResponseSearchData,
+} from '@/libs/interfaces/search-movies.interface';
+import {MOVIE_TYPES} from '@/libs/constants/common';
+import MovieCard from '@/components/cards/MovieCard';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const MovieDetails = () => {
+  const insets = useSafeAreaInsets();
   const {id: slug} = useLocalSearchParams();
   const [movieDetails, setMovieDetails] = useState<IMovieDetail | undefined>();
+  const [episodes, setEpisodes] = useState<IEpisode[] | undefined>();
+
+  const [relatedMovies, setRelatedMovies] = useState<TMoviesData[]>([]);
+
   const [episodeTotal, setEpisodeTotal] = useState<number | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  // console.log('🚀 ~ MovieDetails ~ movieDetails:', movieDetails);
+  const [episodeLang, setEpisodeLang] = useState<number>(0);
+  const [langs, setLangs] = useState<string[] | null>(null);
+
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -41,7 +57,6 @@ const MovieDetails = () => {
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const handleSheetChanges = useCallback((index: number) => {
-    console.log('handleSheetChanges', index);
     setIndexShowModal(index);
   }, []);
 
@@ -64,10 +79,35 @@ const MovieDetails = () => {
     return response as unknown as IMovieDetailResponse;
   };
 
-  const {data, isLoading, isFetched} = useQuery({
+  const getRelatedMovies = async (): Promise<TResponseSearchData> => {
+    if (!movieDetails?.movie) {
+      throw new Error('Movie details are required');
+    }
+    const {type, category, country} = movieDetails?.movie;
+    const typeName = MOVIE_TYPES.find((item) => item.key === type)?.value;
+    const categoryName = category?.length && category.map((item) => item.slug);
+
+    const response = await apiClientWithVersion.get(`danh-sach/${typeName}`, {
+      category: categoryName,
+      // sort_field: '_id',
+      // sort_type: 'asc',
+      // page: 1,
+      // country: countryName ?? '',
+    });
+
+    return response.data as unknown as TResponseSearchData;
+  };
+
+  const {data, isLoading} = useQuery({
     queryKey: ['movie', slug],
     queryFn: getMovieDetail,
     enabled: !!slug,
+  });
+
+  const {data: relatedMovieData, isLoading: isLoadingRelatedMovies} = useQuery({
+    queryKey: ['relatedMovie', slug], //
+    queryFn: getRelatedMovies,
+    enabled: !!movieDetails?.movie?.type,
   });
 
   useEffect(() => {
@@ -76,15 +116,43 @@ const MovieDetails = () => {
         movie: data.movie,
         episodes: data.episodes,
       };
-      setMovieDetails(movieData);
-
       // episode_total
       const {episode_total} = movieData.movie;
       const {link_m3u8} = movieData?.episodes[0].server_data[0];
+
       setVideoUrl(link_m3u8);
       setEpisodeTotal(episode_total as unknown as number);
+      setMovieDetails(movieData);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (!movieDetails?.episodes.length) return;
+
+    const episodeData = movieDetails.episodes;
+
+    const isMultipleServerLangs = episodeData.length > 1;
+    if (isMultipleServerLangs) {
+      const multipleServerLangs = episodeData.map((item) => item.server_name);
+      setLangs(multipleServerLangs);
+    }
+
+    setEpisodes([episodeData[episodeLang]]);
+  }, [episodeLang, movieDetails]);
+
+  useEffect(() => {
+    if (relatedMovieData) {
+      setRelatedMovies(relatedMovieData.items);
+    } else {
+      setRelatedMovies([]);
+    }
+  }, [relatedMovieData]);
+
+  const handleSelectServerLang = (number: number) => {
+    setEpisodeLang(number);
+    if (!movieDetails?.episodes.length) return;
+    setEpisodes([movieDetails?.episodes[number]]);
+  };
 
   const player = useVideoPlayer(videoUrl, (player) => {
     player.loop = false;
@@ -107,23 +175,9 @@ const MovieDetails = () => {
     );
   }
 
-  return (
-    <View className="flex-1 bg-primary">
-      <View className="flex w-full pt-0 mt-0 bg-black">
-        <VideoView
-          player={player}
-          allowsFullscreen={true}
-          allowsPictureInPicture={true}
-          nativeControls={true}
-          contentFit="contain"
-          style={styles.video}
-        />
-      </View>
-      <ScrollView
-        contentContainerStyle={{paddingBottom: 80, flexGrow: 1}}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={false}
-      >
+  const renderHeader = () => {
+    return (
+      <View>
         {/* Title */}
         <View className="flex-col items-start justify-center px-5 mt-3">
           <Text className="text-lg font-bold text-white">
@@ -217,32 +271,104 @@ const MovieDetails = () => {
             </Text>
           </View>
         </View>
+      </View>
+    );
+  };
+  const renderEpisodeList = () => {
+    return episodeTotal && episodeTotal > 1 ? (
+      <View className="flex-col px-5 mt-3">
+        <View className="flex-row items-center justify-between w-full">
+          <Text className="text-white font-bold text-xl  border-b-2 border-b-red-400 h-[38px]">
+            Tập phim
+          </Text>
 
-        {/* Episodes */}
-        {episodeTotal && episodeTotal > 1 && (
-          <View className="flex-col items-start justify-center px-5 mt-3">
-            <View className="flex-row items-center justify-between w-full">
-              <Text className="text-white font-bold text-xl  border-b-2 border-b-red-400 h-[38px]">
-                Tập phim
-              </Text>
+          <TouchableOpacity
+            className="px-2"
+            onPress={() => {
+              handleSheetChanges(1);
+            }}
+          >
+            <IconMaterialIcons
+              className="w-full"
+              name="arrow-forward-ios"
+              size={20}
+              color={Colors.white}
+            />
+          </TouchableOpacity>
+        </View>
 
-              <IconMaterialIcons
-                name="arrow-forward-ios"
-                size={20}
-                color={Colors.white}
-                onPress={() => {
-                  console.log('Chọn tập phim Click arrow forward');
-                  handleSheetChanges(1);
+        <View>
+          <EpisodeList
+            episodes={episodes}
+            onSelectEpisode={handleSelectEpisode}
+            episodePlaying={videoUrl}
+            serverLangs={langs}
+            onSelectServerLang={handleSelectServerLang}
+            episodeLang={episodeLang}
+          />
+        </View>
+
+        {/* <View>
+          <FlatList
+            data={relatedMovies}
+            renderItem={({item}) => {
+              return (
+                <View className="flex-row items-center justify-between w-full px-5">
+                  <Text className="text-white font-bold text-xl">
+                    {item.name}
+                  </Text>
+                </View>
+              );
+            }}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{paddingBottom: 80}}
+          />
+        </View> */}
+      </View>
+    ) : null;
+  };
+
+  return (
+    <View className="flex-1 bg-primary">
+      <View className="flex w-full pt-0 mt-0 bg-black">
+        {/* Video player */}
+        <VideoView
+          player={player}
+          allowsFullscreen={true}
+          allowsPictureInPicture={true}
+          nativeControls={true}
+          contentFit="contain"
+          style={styles.video}
+        />
+      </View>
+
+      {/* content */}
+      <View className="">
+        <FlatList
+          data={episodes}
+          renderItem={renderEpisodeList}
+          ListHeaderComponent={renderHeader}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            <View className="flex-col mt-5">
+              <FlatList
+                data={relatedMovies}
+                renderItem={({item}) => {
+                  return (
+                    <View className="flex-row items-center justify-between w-full px-5">
+                      <MovieCard {...item} />
+                    </View>
+                  );
                 }}
+                showsHorizontalScrollIndicator={false}
               />
             </View>
-            <EpisodeList
-              episodes={movieDetails?.episodes}
-              onSelectEpisode={handleSelectEpisode}
-              episodePlaying={videoUrl}
-            />
-          </View>
-        )}
+          }
+          ListFooterComponentStyle={{
+            paddingBottom: insets.bottom + 120,
+          }}
+          contentContainerStyle={{paddingBottom: 80}}
+        />
 
         {/* Bottom sheet modal */}
         <BottomSheetModalProvider>
@@ -255,10 +381,10 @@ const MovieDetails = () => {
             index={indexShowModal}
             style={{backgroundColor: Colors.primary}}
             handleComponent={() => (
-              <View className="flex items-center justify-center">
+              <View className="flex items-center justify-center h-[30px]">
                 <IconMaterialIcons
                   name="keyboard-arrow-down"
-                  size={26}
+                  size={30}
                   color={Colors.accent}
                   onPress={handleClosePress}
                 />
@@ -269,9 +395,9 @@ const MovieDetails = () => {
               style={styles.contentContainer}
               className="bg-primary"
             >
-              {episodeTotal && episodeTotal > 1 && (
+              {episodeTotal && episodeTotal > 1 && episodes && (
                 <EpisodeListGrid
-                  episodes={movieDetails?.episodes}
+                  episodes={episodes ?? []}
                   onSelectEpisode={handleSelectEpisode}
                   episodePlaying={videoUrl}
                   onClose={handleClosePress}
@@ -280,7 +406,7 @@ const MovieDetails = () => {
             </BottomSheetView>
           </BottomSheet>
         </BottomSheetModalProvider>
-      </ScrollView>
+      </View>
     </View>
   );
 };

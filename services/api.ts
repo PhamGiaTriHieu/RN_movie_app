@@ -1,4 +1,5 @@
 import axiosInstance from '@/services/axios';
+import qs from 'qs';
 const version = 'v1';
 
 // Tạo các custom hooks để sử dụng với Axios
@@ -20,7 +21,12 @@ export const apiClient = {
 // Versioning API client
 export const apiClientWithVersion = {
   get: async (url: string, params = {}) => {
-    return axiosInstance.get(`${version}/api/${url}`, {params});
+    return axiosInstance.get(`${version}/api/${url}`, {
+      params,
+      paramsSerializer: (params) => {
+        return qs.stringify(params, {indices: false});
+      },
+    });
   },
   post: async (url: string, data = {}) => {
     return axiosInstance.post(`${version}/api/${url}`, data);
