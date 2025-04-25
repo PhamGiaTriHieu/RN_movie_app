@@ -307,23 +307,6 @@ const MovieDetails = () => {
             episodeLang={episodeLang}
           />
         </View>
-
-        {/* <View>
-          <FlatList
-            data={relatedMovies}
-            renderItem={({item}) => {
-              return (
-                <View className="flex-row items-center justify-between w-full px-5">
-                  <Text className="text-white font-bold text-xl">
-                    {item.name}
-                  </Text>
-                </View>
-              );
-            }}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{paddingBottom: 80}}
-          />
-        </View> */}
       </View>
     ) : null;
   };

@@ -94,7 +94,7 @@ const EpisodeListGrid = ({
   };
 
   return (
-    <View className={`h-auto`}>
+    <View className={`h-auto`} style={{paddingBottom: insets.bottom + 120}}>
       {/* Node Pagination */}
       <View className="my-2">
         <FlatList
@@ -144,8 +144,8 @@ const EpisodeListGrid = ({
         keyExtractor={(item, index) => `${item.name}-${index}`}
         renderItem={({item, index}) => renderEpisode(item, index)}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 80,
-          paddingTop: 12,
+          paddingBottom: insets.bottom + 120,
+          paddingTop: 8,
         }}
         nestedScrollEnabled
       />
