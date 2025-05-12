@@ -38,15 +38,35 @@ export default function Index() {
     return response as unknown as ILatestMoviesResponse;
   };
 
-  const getVieNameMovies = async (): Promise<TResponseData> => {
-    const response = await apiClientWithVersion.get('quoc-gia/viet-nam', {
-      sort_field: '_id',
-      sort_type: 'asc',
-      page: 1,
-      year: 2025,
-    });
+  const getCountryMovies = async (
+    countrySlug: string
+  ): Promise<TResponseData> => {
+    try {
+      if (!countrySlug) {
+        countrySlug = 'viet-nam';
+      }
+      const response = await apiClientWithVersion.get(
+        `quoc-gia/${countrySlug}`,
+        {
+          sort_field: '_id',
+          sort_type: 'asc',
+          page: 1,
+          year: 2025,
+        }
+      );
 
-    return response.data;
+      if ((response.status as unknown as string) == 'error') {
+        const err = response as unknown as any;
+        throw new Error(err.msg);
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error)
+        throw new Error(`Failed to fetch movies: ${error.message}`);
+
+      throw new Error(`Failed to fetch movies: ${error}`);
+    }
   };
 
   const {data, isLoading} = useQuery({
@@ -54,20 +74,22 @@ export default function Index() {
     queryFn: getLatestMovies,
   });
 
-  const {data: vietNameMoviesData, isLoading: isLoadingVietNameMoviesData} =
+  const {data: vietNamMoviesData, isLoading: isLoadingvietNamMoviesData} =
     useQuery({
       queryKey: ['vietNameMovies'],
-      queryFn: getVieNameMovies,
+      queryFn: () => getCountryMovies('viet-nam'),
     });
+
+  const {data: chinaMoviesData} = useQuery({
+    queryKey: ['chinaMovies'],
+    queryFn: () => getCountryMovies('trung-quoc'),
+  });
 
   useEffect(() => {
     if (data) {
       setLatestMovies(data.items);
     }
-    if (vietNameMoviesData) {
-      console.log('VietNameMoviesData:', vietNameMoviesData.items);
-    }
-  }, [data, vietNameMoviesData]);
+  }, [data]);
 
   const handleMoviePress = (slugMovie: string) => {
     router.push(`/movies/${slugMovie}`);
@@ -112,7 +134,7 @@ export default function Index() {
               </Text>
             </View>
             <FlatList
-              data={vietNameMoviesData?.items}
+              data={vietNamMoviesData?.items}
               renderItem={({item}) => {
                 return <MovieCardHorizontal {...item} />;
               }}
@@ -122,15 +144,15 @@ export default function Index() {
             />
           </View>
 
-          {/* Viet Nam movies Section */}
+          {/* Trung Quoc movies Section */}
           <View className="mt-3">
             <View className="py-2">
               <Text className="text-white text-2xl font-extrabold">
-                Viet Nam movies
+                China movies
               </Text>
             </View>
             <FlatList
-              data={vietNameMoviesData?.items}
+              data={chinaMoviesData?.items}
               renderItem={({item}) => {
                 return <MovieCardHorizontal {...item} />;
               }}
